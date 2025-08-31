@@ -1,6 +1,9 @@
 package com.taylor.taskmanager.service;
 
+import com.taylor.taskmanager.dto.TaskRequest;
+import com.taylor.taskmanager.dto.TaskResponse;
 import com.taylor.taskmanager.exception.ResourceNotFoundException;
+import com.taylor.taskmanager.mapper.TaskMapper;
 import com.taylor.taskmanager.model.Task;
 import com.taylor.taskmanager.model.TaskStatus;
 import com.taylor.taskmanager.repository.TaskRepository;
@@ -15,46 +18,62 @@ import java.util.List;
 @Transactional
 public class TaskService {
     private final TaskRepository taskRepository;
+    private final TaskMapper taskMapper;
 
-    public List<Task> getAllTasks() {
-        return taskRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<TaskResponse> getAllTasks() {
+        List<Task> tasks = taskRepository.findAll();
+        return taskMapper.toDtoList(tasks);
     }
 
-    public Task getTaskById(Long id) {
-        return taskRepository.findById(id)
+    @Transactional(readOnly = true)
+    public TaskResponse getTaskById(Long id) {
+        Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", id));
+        return taskMapper.toDto(task);
     }
 
-    public List<Task> getTasksByStatus(TaskStatus status) {
-        return taskRepository.findByStatus(status);
+    @Transactional(readOnly = true)
+    public List<TaskResponse> getTasksByStatus(TaskStatus status) {
+        List<Task> tasks = taskRepository.findByStatus(status);
+        return taskMapper.toDtoList(tasks);
     }
 
-    public List<Task> searchTasksByTitle(String title) {
-        return taskRepository.findByTitleContainingIgnoreCase(title);
+    @Transactional(readOnly = true)
+    public List<TaskResponse> searchTasksByTitle(String title) {
+        List<Task> tasks = taskRepository.findByTitleContainingIgnoreCase(title);
+        return taskMapper.toDtoList(tasks);
     }
 
-    public Task createTask(Task task) {
-        return taskRepository.save(task);
+    public TaskResponse createTask(TaskRequest taskRequest) {
+        Task task = taskMapper.toEntity(taskRequest);
+        Task savedTask = taskRepository.save(task);
+        return taskMapper.toDto(savedTask);
     }
 
-    public Task updateTask(Long id, Task taskDetails) {
-        Task existingTask = getTaskById(id);
+    public TaskResponse updateTask(Long id, TaskRequest taskRequest) {
+        Task existingTask = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", id));
 
-        existingTask.setTitle(taskDetails.getTitle());
-        existingTask.setDescription(taskDetails.getDescription());
-        existingTask.setStatus(taskDetails.getStatus());
+        taskMapper.updateEntityFromDto(taskRequest, existingTask);
+        Task updatedTask = taskRepository.save(existingTask);
 
-        return taskRepository.save(existingTask);
+        return taskMapper.toDto(updatedTask);
     }
 
-    public Task updateTaskStatus(Long id, TaskStatus status) {
-        Task task = getTaskById(id);
+    public TaskResponse updateTaskStatus(Long id, TaskStatus status) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", id));
+
         task.setStatus(status);
-        return taskRepository.save(task);
+        Task updatedTask = taskRepository.save(task);
+
+        return taskMapper.toDto(updatedTask);
     }
 
     public void deleteTask(Long id) {
-        Task task = getTaskById(id);
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", id));
         taskRepository.delete(task);
     }
 }

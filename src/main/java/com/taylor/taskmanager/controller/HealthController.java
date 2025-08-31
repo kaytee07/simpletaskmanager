@@ -1,5 +1,6 @@
 package com.taylor.taskmanager.controller;
 
+import com.taylor.taskmanager.dto.ApiResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,22 +19,24 @@ public class HealthController {
     private String activeProfile;
 
     @GetMapping("/health")
-    public ResponseEntity<Map<String, Object>> healthCheck() {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> healthCheck() {
         Map<String, Object> healthInfo = new HashMap<>();
         healthInfo.put("status", "UP");
         healthInfo.put("application", appName);
         healthInfo.put("profile", activeProfile);
         healthInfo.put("timestamp", java.time.LocalDateTime.now());
-        return ResponseEntity.ok(healthInfo);
+
+        return ResponseEntity.ok(ApiResponse.success("Service is healthy", healthInfo));
     }
 
     @GetMapping("/info")
-    public ResponseEntity<Map<String, Object>> appInfo() {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> appInfo() {
         Map<String, Object> info = new HashMap<>();
         info.put("name", appName);
         info.put("version", "1.0.0");
         info.put("description", "Task Management System");
         info.put("environment", activeProfile);
-        return ResponseEntity.ok(info);
+
+        return ResponseEntity.ok(ApiResponse.success("Application information", info));
     }
 }
